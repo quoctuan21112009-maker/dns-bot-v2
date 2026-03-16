@@ -76,3 +76,7 @@ htmlcov/
 .vscode/
 .idea/
 *.iml
+backend/.env
+frontend/.env
+backend/.env
+frontend/.env
