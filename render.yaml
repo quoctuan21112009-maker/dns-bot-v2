@@ -1,18 +1,18 @@
+# render.yaml - DNS Bot v2 deployment
+
 services:
   # PostgreSQL Database
   - type: pserv
     name: dns-bot-db
-    ipAddress: 10.0.0.2
     plan: standard
     postgresVersion: 15
     databaseName: dnsbot_db
     user: dnsbot
     region: singapore
-    
-  # Redis Cache  
+
+  # Redis Cache
   - type: redis
     name: dns-bot-redis
-    ipAddress: 10.0.0.3
     plan: standard
     region: singapore
 
@@ -21,12 +21,12 @@ services:
     name: dns-bot-backend
     runtime: python
     runtimeVersion: 3.11
+    rootDir: backend          # quan trọng: Dockerfile nằm ở backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /docs
     plan: starter
     region: singapore
-    
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -34,66 +34,49 @@ services:
           property: connectionString
           # Modify connection string for asyncpg
           value: postgresql+asyncpg://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
-      
       - key: REDIS_URL
         fromService:
           name: dns-bot-redis
           property: connectionString
-      
       - key: DEBUG
         value: "False"
-      
       - key: LOG_LEVEL
         value: INFO
-      
       - key: SECRET_KEY
         generateValue: true
-      
       - key: GROQ_API_KEY
         sync: false
-      
       - key: OPENAI_API_KEY
         sync: false
-      
       - key: GEMINI_API_KEY
         sync: false
-      
       - key: GITHUB_API_TOKEN
         sync: false
-      
       - key: JUDGE0_API_KEY
         sync: false
-      
       - key: TWILIO_ACCOUNT_SID
         sync: false
-      
       - key: TWILIO_AUTH_TOKEN
         sync: false
-      
       - key: TWILIO_PHONE
         sync: false
-    
-    rootDir: backend
 
   # Frontend
   - type: web
     name: dns-bot-frontend
     runtime: node
     runtimeVersion: 18
+    rootDir: frontend         # quan trọng: Dockerfile nằm ở frontend
     buildCommand: npm install && npm run build
     startCommand: npm install -g serve && serve -s dist -l $PORT
     healthCheckPath: /
+    publishPath: dist
     plan: starter
     region: singapore
-    publishPath: dist
-    
     envVars:
       - key: VITE_API_URL
         fromService:
           name: dns-bot-backend
           property: url
-      
       - key: VITE_WS_URL
         value: ${VITE_WS_URL}
-    
-    rootDir: frontend
